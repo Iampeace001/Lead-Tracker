@@ -1,27 +1,26 @@
-let myLeads = [];
-let oldLeads = [];
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+import {
+    getDatabase,
+    ref,
+    push,
+    onValue,
+    remove
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+
+
+const firebaseConfig = {
+    databaseURL: "https://lead-tracker-app-6d259-default-rtdb.firebaseio.com/"
+};
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+const referenceInDB = ref(database, "leads");
+
 const inputEl = document.getElementById("textBox");
 const inputButton = document.getElementById("save-Btn");
 const ulEl = document.getElementById("ul-el");
 
 const deleteBtn = document.getElementById("delete-btn");
-const leadsFromLocalsStorage = JSON.parse(localStorage.getItem("myLeads"));
-const tabBtn = document.getElementById("tab-btn");
-
-if (leadsFromLocalsStorage) {
-    myLeads = leadsFromLocalsStorage;
-    render(myLeads);
-}
-
-tabBtn.addEventListener("click", function () {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-
-        myLeads.push(tabs[0].url);
-        localStorage.getItem("myLeads", JSON.stringify(myLeads));
-        render(myLeads);
-    })
-
-})
 
 function render(leads) {
     let listItem = "";
@@ -37,19 +36,24 @@ function render(leads) {
 
     ulEl.innerHTML = listItem;
 }
+onValue(referenceInDB, function (snapshot) {
+
+    const snapshotDoesExist = snapshot.exists;
+    if (snapshotDoesExist) {
+        const snapshotValues = snapshot.val();
+        const leads = Object.values(snapshotValues);
+        render(leads);
+    }
+});
 
 deleteBtn.addEventListener("dblclick", function () {
-    console.log("double clicked!");
-    localStorage.clear();
-    myLeads = [];
-    render(myLeads);
+    remove(referenceInDB);
+    ulEl.innerHTML = "";
 })
 
 inputButton.addEventListener("click", function () {
-    myLeads.push(inputEl.value);
+    push(referenceInDB, inputEl.value);
     inputEl.value = "";
-    localStorage.setItem("myLeads", JSON.stringify(myLeads));
-    renderLeads();
 })
 
 
